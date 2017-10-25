@@ -8,6 +8,9 @@ import android.os.Looper;
 import android.os.SystemClock;
 import android.text.TextUtils;
 import android.util.AttributeSet;
+import android.util.Log;
+import android.webkit.JsPromptResult;
+import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
@@ -21,7 +24,7 @@ import java.util.Map;
 @SuppressLint("SetJavaScriptEnabled")
 public class BridgeWebView extends WebView implements WebViewJavascriptBridge {
 
-	private final String TAG = "BridgeWebView";
+	private final String TAG = "LiuTag";
 
 	public static final String toLoadJs = "WebViewJavascriptBridge.js";
 	Map<String, CallBackFunction> responseCallbacks = new HashMap<String, CallBackFunction>();
@@ -55,6 +58,7 @@ public class BridgeWebView extends WebView implements WebViewJavascriptBridge {
 		init();
 	}
 
+
 	/**
 	 * 
 	 * @param handler
@@ -79,14 +83,20 @@ public class BridgeWebView extends WebView implements WebViewJavascriptBridge {
         return new BridgeWebViewClient(this);
     }
 
-	void handlerReturnData(String url) {
-		String functionName = BridgeUtil.getFunctionFromReturnUrl(url);
+    /**
+     * 调用 JS 方法后的返回数据
+     * @param url
+     */
+	public void handlerReturnData(String url) {
+        Log.d(TAG, "handlerReturnData: url " + url);
+        String functionName = BridgeUtil.getFunctionFromReturnUrl(url);
 		CallBackFunction f = responseCallbacks.get(functionName);
+
 		String data = BridgeUtil.getDataFromReturnUrl(url);
+
 		if (f != null) {
 			f.onCallBack(data);
 			responseCallbacks.remove(functionName);
-			return;
 		}
 	}
 
@@ -101,13 +111,15 @@ public class BridgeWebView extends WebView implements WebViewJavascriptBridge {
 	}
 
 	private void doSend(String handlerName, String data, CallBackFunction responseCallback) {
-		Message m = new Message();
+        Log.d(TAG, "doSend: handlerName = " + handlerName + ";data = " + data);
+        Message m = new Message();
 		if (!TextUtils.isEmpty(data)) {
 			m.setData(data);
 		}
 		if (responseCallback != null) {
 			String callbackStr = String.format(BridgeUtil.CALLBACK_ID_FORMAT, ++uniqueId + (BridgeUtil.UNDERLINE_STR + SystemClock.currentThreadTimeMillis()));
-			responseCallbacks.put(callbackStr, responseCallback);
+            Log.d(TAG, "doSend: callbackStr = " + callbackStr);
+            responseCallbacks.put(callbackStr, responseCallback);
 			m.setCallbackId(callbackStr);
 		}
 		if (!TextUtils.isEmpty(handlerName)) {
@@ -117,6 +129,9 @@ public class BridgeWebView extends WebView implements WebViewJavascriptBridge {
 	}
 
 	private void queueMessage(Message m) {
+        /**
+         * loadUrl 调用 JS 必须在 onPageFinished 之后才能调用，所以在这之前的 js 调用都要先放到 start up message 列表里面
+         */
 		if (startupMessage != null) {
 			startupMessage.add(m);
 		} else {
@@ -124,8 +139,9 @@ public class BridgeWebView extends WebView implements WebViewJavascriptBridge {
 		}
 	}
 
-	void dispatchMessage(Message m) {
+	public void dispatchMessage(Message m) {
         String messageJson = m.toJson();
+        Log.d(TAG, "dispatchMessage: " + messageJson);
         //escape special characters for json string
         messageJson = messageJson.replaceAll("(\\\\)([^utrn])", "\\\\\\\\$1$2");
         messageJson = messageJson.replaceAll("(?<=[^\\\\])(\")", "\\\\\"");

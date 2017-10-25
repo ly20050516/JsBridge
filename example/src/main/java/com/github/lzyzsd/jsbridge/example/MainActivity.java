@@ -19,7 +19,7 @@ import com.google.gson.Gson;
 
 public class MainActivity extends Activity implements OnClickListener {
 
-	private final String TAG = "MainActivity";
+	private final String TAG = "LiuTag";
 
 	BridgeWebView webView;
 
@@ -91,7 +91,7 @@ public class MainActivity extends Activity implements OnClickListener {
         webView.callHandler("functionInJs", new Gson().toJson(user), new CallBackFunction() {
             @Override
             public void onCallBack(String data) {
-
+                Log.d(TAG, "onCallBack: Gson().toJson(user) " + data);
             }
         });
 
@@ -120,6 +120,7 @@ public class MainActivity extends Activity implements OnClickListener {
 	@Override
 	public void onClick(View v) {
 		if (button.equals(v)) {
+            Log.d(TAG, "onClick: webView callHandler");
             webView.callHandler("functionInJs", "data from Java", new CallBackFunction() {
 
 				@Override
