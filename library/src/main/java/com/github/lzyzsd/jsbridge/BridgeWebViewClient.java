@@ -45,11 +45,13 @@ public class BridgeWebViewClient extends WebViewClient {
     @Override
     public void onPageStarted(WebView view, String url, Bitmap favicon) {
         super.onPageStarted(view, url, favicon);
+        Log.d("LiuTag", "onPageStarted: url = " + url);
     }
 
     @Override
     public void onPageFinished(WebView view, String url) {
         super.onPageFinished(view, url);
+        Log.d("LiuTag", "onPageFinished: url = " + url);
 
         // TODO: 2017/10/25 每次页面打开完成都要加载一次吗
         if (BridgeWebView.toLoadJs != null) {
